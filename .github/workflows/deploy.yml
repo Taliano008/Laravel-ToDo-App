@@ -1,0 +1,40 @@
+name: Deploy to Production
+
+on:
+  workflow_run:
+    workflows: ["Build & Push Docker Image"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script: |
+            # Pull the latest code (including docker-compose.prod.yml)
+            cd /var/www/my-app
+            git pull origin main
+
+            # Login to GHCR (Ensure you've done 'docker login ghcr.io -u ... -p ...' on the server once)
+            # or pass the token here if you want to be stateless (less secure in logs)
+            
+            # Export GITHUB_REPOSITORY for the variable in docker-compose.prod.yml
+            export GITHUB_REPOSITORY=${{ github.repository }}
+            
+            # Pull the latest images
+            docker compose -f docker-compose.prod.yml pull
+            
+            # Restart services
+            docker compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            
+            echo "Deployment finished."

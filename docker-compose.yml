@@ -1,0 +1,40 @@
+services:
+  php:
+    container_name: task-manager-php
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/app.ini
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_KEY: ${APP_KEY}
+      # Aligning with .env (SQLite)
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /app/database/database.sqlite
+    networks:
+      - app-network
+    # healthcheck:
+    #   test: ["CMD", "php", "-v"]
+
+  nginx:
+    container_name: task-manager-nginx
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/app
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

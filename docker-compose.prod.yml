@@ -1,0 +1,24 @@
+services:
+  app:
+    # Replace username/repo with your actual GitHub username and repository name
+    image: ghcr.io/${GITHUB_REPOSITORY}:latest
+    container_name: app
+    restart: always
+    ports:
+      - "80:80"
+    environment:
+      APP_NAME: "TASK MANAGER"
+      APP_ENV: production
+      APP_DEBUG: false
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${APP_URL}
+      # SQLite Configuration
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /app/database/database.sqlite
+
+    volumes:
+      # Map the local database folder to the container's database folder
+      # Ensure you have a database.sqlite file created locally before deploying if you want to preload data
+      # or let Laravel create it if configured (usually requires file existence)
+      - ./database:/app/database
+    # No networks needed if standalone, or use default bridge
