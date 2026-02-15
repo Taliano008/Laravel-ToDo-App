@@ -5,7 +5,7 @@ FROM php:8.2-cli-alpine AS composer_deps
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
+RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader --no-scripts
 
 # 2. Frontend Build
 FROM node:20-alpine AS assets
@@ -52,6 +52,9 @@ COPY docker/php/php.ini /usr/local/etc/php/conf.d/app.ini
 COPY --from=composer_deps /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 COPY . .
+
+# Run deferred Composer scripts (artisan is now available)
+RUN php artisan package:discover --ansi
 
 # Setup Storage Permissions
 RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
