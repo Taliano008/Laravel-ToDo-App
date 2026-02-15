@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # 1. Vendor Build
-FROM composer:2 AS composer_deps
+FROM php:8.2-cli-alpine AS composer_deps
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
